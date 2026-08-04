@@ -7,8 +7,8 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 export default defineConfig({
   plugins: [
     tanstackStart({
-      // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-      server: { entry: "server" },
+      // Point Vercel at a JavaScript runtime entry so the serverless function can import it without resolving TypeScript source files at runtime.
+      server: { entry: "./src/server.js" },
     }),
     tsConfigPaths(),
     react(),

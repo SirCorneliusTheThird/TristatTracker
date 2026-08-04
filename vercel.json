@@ -1,1 +1,7 @@
-{}
+{
+  "functions": {
+    "api/index.js": {
+      "runtime": "edge"
+    }
+  }
+}
