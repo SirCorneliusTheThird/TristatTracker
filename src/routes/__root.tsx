@@ -10,7 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -40,7 +39,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    console.error(error);
   }, [error]);
 
   return (
@@ -81,16 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "TriStat Tracker — Steam & Epic stats in one place" },
       { name: "description", content: "Track playtime, achievements, friends and goals across Steam and Epic Games with a single privacy-first dashboard." },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "TriStat Tracker" },
       { property: "og:title", content: "TriStat Tracker — Steam & Epic stats in one place" },
       { property: "og:description", content: "Track playtime, achievements, friends and goals across Steam and Epic Games with a single privacy-first dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@TriStatTracker" },
       { name: "twitter:title", content: "TriStat Tracker — Steam & Epic stats in one place" },
       { name: "twitter:description", content: "Track playtime, achievements, friends and goals across Steam and Epic Games with a single privacy-first dashboard." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f2d9abe0-0e38-485d-b217-4ce10bd6c5b6/id-preview-8e2c99f9--61bc8e76-5d42-455b-b6e1-1889595e10cc.lovable.app-1785781029741.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f2d9abe0-0e38-485d-b217-4ce10bd6c5b6/id-preview-8e2c99f9--61bc8e76-5d42-455b-b6e1-1889595e10cc.lovable.app-1785781029741.png" },
     ],
     links: [
       {

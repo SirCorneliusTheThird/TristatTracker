@@ -1,25 +1,37 @@
-# Welcome to your Lovable project
+# TriStat Tracker
 
-This project was built with [Lovable](https://lovable.dev).
+A privacy-first dashboard for combining Steam and Epic Games stats, goals, friends, and activity insights.
 
-## Build with Lovable
+## Deployment Stack
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+- Frontend: Vercel
+- Backend/Auth: Supabase
+- Framework: TanStack Start + React + TypeScript
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+## Local development
 
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
+
+## Environment variables
+
+Set these before running locally or deploying to Vercel:
+
+```bash
+VITE_SUPABASE_URL=<your-supabase-project-url>
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
+SUPABASE_URL=<your-supabase-project-url>
+SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
+```
+
+For Vercel, add the same variables in the project settings under Environment Variables.
 
 ## Built with
 
@@ -27,3 +39,4 @@ npm run dev
 - TypeScript
 - React
 - Tailwind CSS
+- Supabase
