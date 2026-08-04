@@ -10,11 +10,11 @@ export default async function handler(request: Request) {
     const serverHandler = entry.default ?? entry;
 
     if (typeof serverHandler === "function") {
-      return serverHandler(request);
+      return (serverHandler as (input: Request) => Response | Promise<Response>)(request);
     }
 
-    if (serverHandler && typeof serverHandler.fetch === "function") {
-      return serverHandler.fetch(request);
+    if (serverHandler && typeof (serverHandler as { fetch?: (input: Request) => Response | Promise<Response> }).fetch === "function") {
+      return (serverHandler as { fetch: (input: Request) => Response | Promise<Response> }).fetch(request);
     }
 
     throw new Error("TanStack Start server entry did not expose a usable handler");
