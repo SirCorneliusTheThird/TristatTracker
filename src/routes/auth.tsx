@@ -33,24 +33,50 @@ function AuthPage() {
   }, [navigate]);
 
   async function signIn() {
+    const emailAddress = email.trim();
+    if (!emailAddress || !password) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
+
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: emailAddress, password });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
     navigate({ to: "/dashboard", replace: true });
   }
 
   async function signUp() {
+    const emailAddress = email.trim();
+    if (!emailAddress || !password) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
+
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: emailAddress,
       password,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${window.location.origin}/auth` },
     });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    if (!data.session) { toast.success("Check your email to confirm your account."); return; }
-    navigate({ to: "/dashboard", replace: true });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    if (data.session) {
+      toast.success("Account created and signed in successfully.");
+      navigate({ to: "/dashboard", replace: true });
+      return;
+    }
+
+    toast.success("Account created. Check your email to confirm your account.");
   }
 
   async function google() {
