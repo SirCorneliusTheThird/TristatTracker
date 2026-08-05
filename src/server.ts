@@ -4,7 +4,7 @@ export const config = {
   runtime: "edge",
 };
 
-export default async function handler(request: Request) {
+const requestHandler = async (request: Request) => {
   try {
     const entry = await import("@tanstack/react-start/server-entry");
     const serverHandler = entry.default ?? entry;
@@ -25,4 +25,10 @@ export default async function handler(request: Request) {
       headers: { "content-type": "text/html; charset=utf-8" },
     });
   }
-}
+};
+
+export default {
+  async fetch(request: Request) {
+    return requestHandler(request);
+  },
+};
