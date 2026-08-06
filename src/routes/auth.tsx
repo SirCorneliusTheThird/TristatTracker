@@ -21,6 +21,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 const APP_URL = import.meta.env.NEXT_PUBLIC_APP_URL?.trim();
+const SIGNUP_COOLDOWN_MS = 60_000;
 
 function getAuthRedirectUrl() {
   if (APP_URL) {
@@ -30,11 +31,25 @@ function getAuthRedirectUrl() {
   return `${window.location.origin}/auth`;
 }
 
+function isRateLimitError(message?: string) {
+  if (!message) return false;
+  const normalized = message.toLowerCase();
+  return normalized.includes("rate limit") || normalized.includes("too many requests");
+}
+
+function getAuthErrorMessage(message?: string) {
+  if (isRateLimitError(message)) {
+    return "Too many email requests. Wait a minute, then try again, or sign in if the account already exists.";
+  }
+  return message || "Authentication failed. Please try again.";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signupCooldownUntil, setSignupCooldownUntil] = useState(0);
 
   useEffect(() => {
     async function handleRedirect() {
@@ -71,7 +86,7 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email: emailAddress, password });
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(getAuthErrorMessage(error.message));
       return;
     }
 
@@ -85,6 +100,11 @@ function AuthPage() {
       return;
     }
 
+    if (Date.now() < signupCooldownUntil) {
+      toast.error("Please wait a moment before requesting another confirmation email.");
+      return;
+    }
+
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email: emailAddress,
@@ -94,7 +114,10 @@ function AuthPage() {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message);
+      if (isRateLimitError(error.message)) {
+        setSignupCooldownUntil(Date.now() + SIGNUP_COOLDOWN_MS);
+      }
+      toast.error(getAuthErrorMessage(error.message));
       return;
     }
 
@@ -116,7 +139,7 @@ function AuthPage() {
     setBusy(false);
 
     if (error) {
-      toast.error(error.message || "Google sign-in failed.");
+      toast.error(getAuthErrorMessage(error.message || "Google sign-in failed."));
       return;
     }
 
