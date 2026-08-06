@@ -146,8 +146,8 @@ function RootComponent() {
           <div className="mt-6 rounded-lg bg-white p-4 text-left text-sm text-slate-700 shadow-sm">
             <p className="font-semibold">Required variables:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li><code>VITE_SUPABASE_URL</code></li>
-              <li><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></li>
+              <li><code>NEXT_PUBLIC_SUPABASE_URL</code></li>
+              <li><code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> or <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
             </ul>
           </div>
           <p className="mt-6 text-xs text-slate-500">
