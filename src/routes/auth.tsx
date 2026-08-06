@@ -29,6 +29,24 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    async function handleRedirect() {
+      if (typeof window === "undefined") return;
+      const hash = window.location.hash;
+      if (!hash.includes("access_token") && !hash.includes("type")) return;
+
+      const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+      if (error) {
+        console.error("Supabase redirect callback error:", error.message);
+        return;
+      }
+      if (data.session) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        navigate({ to: "/dashboard", replace: true });
+      }
+    }
+
+    handleRedirect();
+
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/dashboard", replace: true });
     });
