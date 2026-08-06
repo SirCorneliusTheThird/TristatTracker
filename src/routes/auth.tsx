@@ -20,6 +20,16 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const APP_URL = import.meta.env.NEXT_PUBLIC_APP_URL?.trim();
+
+function getAuthRedirectUrl() {
+  if (APP_URL) {
+    const base = APP_URL.endsWith("/") ? APP_URL.slice(0, -1) : APP_URL;
+    return `${base}/auth`;
+  }
+  return `${window.location.origin}/auth`;
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -79,7 +89,7 @@ function AuthPage() {
     const { data, error } = await supabase.auth.signUp({
       email: emailAddress,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth` },
+      options: { emailRedirectTo: getAuthRedirectUrl() },
     });
     setBusy(false);
 
@@ -101,7 +111,7 @@ function AuthPage() {
     setBusy(true);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth` },
+      options: { redirectTo: getAuthRedirectUrl() },
     });
     setBusy(false);
 

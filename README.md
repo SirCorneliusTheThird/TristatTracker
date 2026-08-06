@@ -27,6 +27,7 @@ Set these before running locally or deploying to Vercel:
 NEXT_PUBLIC_SUPABASE_URL=<your-supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+NEXT_PUBLIC_APP_URL=<your-public-app-url>
 SUPABASE_URL=<your-supabase-project-url>
 SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
