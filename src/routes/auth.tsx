@@ -21,14 +21,38 @@ export const Route = createFileRoute("/auth")({
 });
 
 const APP_URL = import.meta.env.NEXT_PUBLIC_APP_URL?.trim();
-const SIGNUP_COOLDOWN_MS = 60_000;
+const SIGNUP_COOLDOWN_MS = 10 * 60_000;
+const SIGNUP_COOLDOWN_STORAGE_KEY = "tristat.signupCooldownUntil";
+
+function normalizeBaseUrl(value?: string) {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.replace(/\/+$/, "");
+}
 
 function getAuthRedirectUrl() {
-  if (APP_URL) {
-    const base = APP_URL.endsWith("/") ? APP_URL.slice(0, -1) : APP_URL;
-    return `${base}/auth`;
+  const configuredBase = normalizeBaseUrl(APP_URL);
+
+  if (typeof window === "undefined") {
+    return configuredBase ? `${configuredBase}/auth` : "/auth";
   }
-  return `${window.location.origin}/auth`;
+
+  const currentOrigin = window.location.origin;
+  const currentHost = window.location.hostname.toLowerCase();
+
+  if (configuredBase) {
+    try {
+      const configuredUrl = new URL(configuredBase);
+      if (configuredUrl.hostname.toLowerCase() === currentHost) {
+        return `${configuredUrl.origin}/auth`;
+      }
+    } catch {
+      // ignore invalid configured URL and fall back to the current origin
+    }
+  }
+
+  return `${currentOrigin}/auth`;
 }
 
 function isRateLimitError(message?: string) {
@@ -39,8 +63,13 @@ function isRateLimitError(message?: string) {
 
 function getAuthErrorMessage(message?: string) {
   if (isRateLimitError(message)) {
-    return "Too many email requests. Wait a minute, then try again, or sign in if the account already exists.";
+    return "Too many confirmation emails were sent from this device. Please wait a few minutes, then try again. If you already created the account, sign in instead, or use Google sign-in to continue.";
   }
+
+  if (message && /redirect|oauth|provider|google/i.test(message)) {
+    return "Google sign-in could not be completed. Please confirm that the app's redirect URL is authorized in Supabase Auth settings, then try again.";
+  }
+
   return message || "Authentication failed. Please try again.";
 }
 
@@ -49,7 +78,23 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [signupCooldownUntil, setSignupCooldownUntil] = useState(0);
+  const [signupCooldownUntil, setSignupCooldownUntil] = useState(() => {
+    if (typeof window === "undefined") return 0;
+
+    const stored = window.localStorage.getItem(SIGNUP_COOLDOWN_STORAGE_KEY);
+    const parsed = Number(stored);
+    return Number.isFinite(parsed) && parsed > Date.now() ? parsed : 0;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (signupCooldownUntil > Date.now()) {
+      window.localStorage.setItem(SIGNUP_COOLDOWN_STORAGE_KEY, String(signupCooldownUntil));
+    } else {
+      window.localStorage.removeItem(SIGNUP_COOLDOWN_STORAGE_KEY);
+    }
+  }, [signupCooldownUntil]);
 
   useEffect(() => {
     async function handleRedirect() {
@@ -101,7 +146,7 @@ function AuthPage() {
     }
 
     if (Date.now() < signupCooldownUntil) {
-      toast.error("Please wait a moment before requesting another confirmation email.");
+      toast.error("Please wait a few minutes before requesting another confirmation email. If you already created the account, use Sign in instead.");
       return;
     }
 
@@ -134,7 +179,7 @@ function AuthPage() {
     setBusy(true);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: getAuthRedirectUrl() },
+      options: { redirectTo: getAuthRedirectUrl(), flowType: "pkce" },
     });
     setBusy(false);
 
