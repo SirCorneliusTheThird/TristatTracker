@@ -179,7 +179,7 @@ function AuthPage() {
     setBusy(true);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: getAuthRedirectUrl(), flowType: "pkce" },
+      options: { flowType: "pkce" },
     });
     setBusy(false);
 
