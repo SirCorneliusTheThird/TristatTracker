@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, isSupabaseConfigured, supabaseConfigError } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -122,6 +122,8 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
@@ -129,6 +131,32 @@ function RootComponent() {
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <div className="max-w-2xl rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
+          <h1 className="text-3xl font-semibold text-amber-900">Supabase configuration is missing</h1>
+          <p className="mt-4 text-sm leading-6 text-amber-800">
+            The app cannot connect to Supabase because required environment variables are not configured.
+          </p>
+          <p className="mt-4 text-sm text-amber-800">
+            {supabaseConfigError}
+          </p>
+          <div className="mt-6 rounded-lg bg-white p-4 text-left text-sm text-slate-700 shadow-sm">
+            <p className="font-semibold">Required variables:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li><code>VITE_SUPABASE_URL</code></li>
+              <li><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></li>
+            </ul>
+          </div>
+          <p className="mt-6 text-xs text-slate-500">
+            Add them to Vercel environment variables, then redeploy.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

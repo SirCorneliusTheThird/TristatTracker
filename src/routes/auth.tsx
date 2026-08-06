@@ -20,6 +20,8 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const APP_ORIGIN = import.meta.env.VITE_APP_URL || "";
+
 function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -58,10 +60,11 @@ function AuthPage() {
     }
 
     setBusy(true);
+    const redirectTo = APP_ORIGIN ? `${APP_ORIGIN}/auth` : `${window.location.origin}/auth`;
     const { data, error } = await supabase.auth.signUp({
       email: emailAddress,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth` },
+      options: { emailRedirectTo: redirectTo },
     });
     setBusy(false);
 
