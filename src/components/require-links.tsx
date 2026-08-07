@@ -24,7 +24,7 @@ export function RequireLinks({ children }: { children: ReactNode }) {
       <div className="surface p-8 text-center">
         <h2 className="text-lg font-semibold">Account linking required</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Link both your Steam and Epic Games accounts to unlock the dashboard, friends, goals and activity feed.
+          Link your gaming accounts to unlock the dashboard, goals and any live stats TriStat can import.
         </p>
         <Button asChild className="mt-5">
           <Link to="/link">Link accounts</Link>

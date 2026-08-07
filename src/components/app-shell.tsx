@@ -109,7 +109,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
     try {
       const res = await sync({});
       await refresh();
-      toast.success(res.completed ? `Synced — ${res.completed} goal(s) completed!` : "Steam & Epic data synced");
+      toast.success(res.completed ? `Synced — ${res.completed} goal(s) completed!` : "Platform data synced");
     } catch {
       toast.error("Sync failed. Try again.");
     } finally {

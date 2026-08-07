@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/link")({
   head: () => ({
     meta: [
       { title: "Link your accounts — TriStat Tracker" },
-      { name: "description", content: "Connect Steam and Epic Games to unlock your TriStat dashboard." },
+      { name: "description", content: "Connect your gaming accounts to unlock your TriStat dashboard." },
       { property: "og:title", content: "Link your accounts — TriStat Tracker" },
       { property: "og:description", content: "Steam and Epic linking is required before tracking begins." },
     ],
@@ -62,8 +62,8 @@ function LinkPage() {
       <div className="w-full">
         <h1 className="text-2xl font-semibold">Link Steam & Epic to continue</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Both accounts are required. TriStat then auto-syncs your library, playtime, achievements, online status
-          and friends.
+          Link the accounts you want to use with TriStat. Imported stats depend on the live platform data that is
+          available for that account.
         </p>
 
         {isLoading ? (

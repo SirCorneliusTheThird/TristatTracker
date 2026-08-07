@@ -36,10 +36,15 @@ declare module '@supabase/supabase-js' {
     options?: unknown,
   ): {
     auth: {
+      getUser(token?: string): Promise<{
+        data?: { user?: { id: string } | null }
+        error?: { message?: string } | null
+      }>
       getClaims(token: string): Promise<{
         data?: { claims?: { sub?: string } }
         error?: unknown
       }>
+      signOut(): Promise<{ error?: unknown }>
     }
   }
 }

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — TriStat Tracker" },
-      { name: "description", content: "Combined Steam and Epic overview: playtime, games tracked and active goals." },
+      { name: "description", content: "Your linked-platform overview: playtime, games tracked and active goals." },
       { property: "og:title", content: "Dashboard — TriStat Tracker" },
       { property: "og:description", content: "Your combined Steam + Epic gaming overview." },
     ],
@@ -47,7 +47,7 @@ function DashboardPage() {
   const steamShare = totalMinutes ? Math.round((steamMinutes / totalMinutes) * 100) : 0;
 
   return (
-    <AppShell title={kids ? "Kids Dashboard" : "Dashboard"} subtitle="Steam + Epic combined overview">
+    <AppShell title={kids ? "Kids Dashboard" : "Dashboard"} subtitle="Overview of imported account data">
       <RequireLinks>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat icon={Clock} label="Total playtime" value={hours(totalMinutes)} hint={`${hours(steamMinutes)} Steam · ${hours(epicMinutes)} Epic`} />
