@@ -254,19 +254,51 @@ async function fetchSteamFriends(steamId: string): Promise<{ friends: SyncedFrie
     };
   }>(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids.join(",")}`);
 
-  const friends = (summary?.response?.players ?? []).map((player) => ({
-    platform_friend_id: player.steamid,
-    name: player.personaname,
-    avatar_url: player.avatarfull,
-    status: mapSteamPresence(player),
-    current_game: player.gameextrainfo ?? null,
-    last_played_game: player.gameextrainfo ?? null,
-    last_played_at: null,
-    is_private: (player.communityvisibilitystate ?? 1) !== 3,
-    total_playtime_minutes: 0,
-    games_count: 0,
-    achievements_count: 0,
-  }));
+  async function fetchFriendLibraryStats(friendSteamId: string) {
+    const data = await steamFetch<{
+      response?: {
+        games?: Array<{ name?: string; playtime_forever: number; rtime_last_played?: number }>;
+      };
+    }>(
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${key}&steamid=${friendSteamId}&include_appinfo=1&include_played_free_games=1`,
+    );
+
+    const games = data?.response?.games;
+    if (!games?.length) return null;
+
+    const totalPlaytimeMinutes = games.reduce((sum, game) => sum + (game.playtime_forever ?? 0), 0);
+    const mostRecent = games
+      .filter((game) => (game.rtime_last_played ?? 0) > 0)
+      .sort((a, b) => (b.rtime_last_played ?? 0) - (a.rtime_last_played ?? 0))[0];
+
+    return {
+      gamesCount: games.length,
+      totalPlaytimeMinutes,
+      lastPlayedGame: mostRecent?.name ?? null,
+      lastPlayedAt: mostRecent?.rtime_last_played ? new Date(mostRecent.rtime_last_played * 1000).toISOString() : null,
+    };
+  }
+
+  const friends = await Promise.all(
+    (summary?.response?.players ?? []).map(async (player) => {
+      const stats = await fetchFriendLibraryStats(player.steamid);
+      const isPrivate = (player.communityvisibilitystate ?? 1) !== 3 || !stats;
+
+      return {
+        platform_friend_id: player.steamid,
+        name: player.personaname,
+        avatar_url: player.avatarfull,
+        status: mapSteamPresence(player),
+        current_game: player.gameextrainfo ?? null,
+        last_played_game: player.gameextrainfo ?? stats?.lastPlayedGame ?? null,
+        last_played_at: stats?.lastPlayedAt ?? null,
+        is_private: isPrivate,
+        total_playtime_minutes: stats?.totalPlaytimeMinutes ?? 0,
+        games_count: stats?.gamesCount ?? 0,
+        achievements_count: 0,
+      };
+    }),
+  );
 
   return {
     friends,
