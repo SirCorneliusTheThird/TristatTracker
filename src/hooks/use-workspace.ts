@@ -1,6 +1,18 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getWorkspace } from "@/lib/tristat.functions";
 
+function summarizeWorkspace(data: Awaited<ReturnType<typeof getWorkspace>>) {
+  return {
+    hasProfile: Boolean(data.profile),
+    links: data.links.length,
+    games: data.games.length,
+    friends: data.friends.length,
+    goals: data.goals.length,
+    activity: data.activity.length,
+    goalEvents: data.goalEvents.length,
+  };
+}
+
 function describeWorkspaceError(error: unknown) {
   if (error instanceof Error) {
     return {
@@ -18,10 +30,17 @@ export function useWorkspace() {
   return useQuery({
     queryKey: ["workspace"],
     queryFn: async () => {
+      console.groupCollapsed("[workspace] fetch");
+      console.log("[workspace] step", "calling getWorkspace()");
       try {
-        return await getWorkspace();
+        const data = await getWorkspace();
+        console.log("[workspace] step", "getWorkspace() resolved");
+        console.log("[workspace] summary", summarizeWorkspace(data));
+        console.groupEnd();
+        return data;
       } catch (error) {
         console.error("[workspace] fetch failed", describeWorkspaceError(error));
+        console.groupEnd();
         throw error;
       }
     },

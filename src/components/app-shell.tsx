@@ -43,6 +43,19 @@ const SYSTEM = [
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
+function describeClientError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause,
+    };
+  }
+
+  return error;
+}
+
 function AppSidebar({ kidsMode }: { kidsMode: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const items = MAIN.filter((i) => !kidsMode || !i.social);
@@ -105,15 +118,35 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
   const kidsMode = data?.profile?.kids_mode ?? false;
 
   async function handleSync() {
+    console.groupCollapsed("[sync] run");
+    console.log("[sync] step", "button clicked");
+    console.log("[sync] context", {
+      pageTitle: title,
+      hasProfile: Boolean(data?.profile),
+      links:
+        data?.links.map((link: { platform: string; platform_username: string; last_synced_at: string | null }) => ({
+          platform: link.platform,
+          username: link.platform_username,
+          lastSyncedAt: link.last_synced_at,
+        })) ?? [],
+    });
     setSyncing(true);
     try {
+      console.log("[sync] step", "calling syncNow()");
       const res = await sync({});
+      console.log("[sync] step", "syncNow() resolved");
+      console.log("[sync] response", res);
+      console.log("[sync] step", "invalidating workspace query");
       await refresh();
+      console.log("[sync] step", "workspace query invalidated");
       toast.success(res.completed ? `Synced — ${res.completed} goal(s) completed!` : "Platform data synced");
-    } catch {
+    } catch (error) {
+      console.error("[sync] failed", describeClientError(error));
       toast.error("Sync failed. Try again.");
     } finally {
       setSyncing(false);
+      console.log("[sync] done");
+      console.groupEnd();
     }
   }
 
