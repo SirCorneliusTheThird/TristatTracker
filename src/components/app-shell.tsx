@@ -168,6 +168,12 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
       const res = await sync({});
       console.log("[sync] step", "syncNow() resolved");
       console.log("[sync] response", JSON.stringify(res, null, 2));
+      console.log("[sync] steam friends", {
+        imported: res.platforms?.steam?.friends ?? 0,
+        diagnostics: res.platforms?.steam?.diagnostics?.filter(
+          (diagnostic: { stage?: string }) => diagnostic.stage?.startsWith("steam.friends"),
+        ) ?? [],
+      });
       console.log("[sync] step", "invalidating workspace query");
       await refresh();
       console.log("[sync] step", "workspace query invalidated");

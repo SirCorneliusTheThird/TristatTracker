@@ -7,6 +7,12 @@ function summarizeWorkspace(data: Awaited<ReturnType<typeof getWorkspace>>) {
     links: data.links.length,
     games: data.games.length,
     friends: data.friends.length,
+    friendPreview: data.friends.slice(0, 5).map((friend) => ({
+      id: friend.id,
+      name: friend.name,
+      platform: friend.platform,
+      private: friend.is_private,
+    })),
     goals: data.goals.length,
     activity: data.activity.length,
     goalEvents: data.goalEvents.length,
