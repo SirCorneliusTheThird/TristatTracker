@@ -45,19 +45,20 @@ export const getWorkspace = createServerFn({ method: "GET" })
     ].filter(([, error]) => error);
 
     if (failures.length) {
-      throw new Error(
-        failures.map(([name, error]) => `${name}: ${(error as { message?: string }).message ?? "unknown error"}`).join(" | "),
+      console.error(
+        "Workspace query failures:",
+        failures.map(([name, error]) => `${name}: ${(error as { message?: string }).message ?? "unknown error"}`),
       );
     }
 
     return {
-      profile: profile.data,
-      links: links.data ?? [],
-      games: games.data ?? [],
-      friends: friends.data ?? [],
-      goals: goals.data ?? [],
-      activity: activity.data ?? [],
-      goalEvents: goalEvents.data ?? [],
+      profile: profile.error ? null : profile.data,
+      links: links.error ? [] : (links.data ?? []),
+      games: games.error ? [] : (games.data ?? []),
+      friends: friends.error ? [] : (friends.data ?? []),
+      goals: goals.error ? [] : (goals.data ?? []),
+      activity: activity.error ? [] : (activity.data ?? []),
+      goalEvents: goalEvents.error ? [] : (goalEvents.data ?? []),
     };
   });
 
