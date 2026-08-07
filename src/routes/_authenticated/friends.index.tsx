@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Lock } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { KidsBlocked, RequireLinks } from "@/components/require-links";
@@ -65,6 +66,11 @@ function FriendsPage() {
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium">{f.name}</span>
                       <PlatformBadge platform={f.platform} />
+                      {f.is_private ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                          <Lock className="size-3" /> Private
+                        </span>
+                      ) : null}
                     </div>
                     <PresenceDot status={f.status} hidden={hideStatus} />
                     <p className="truncate text-xs text-muted-foreground">
