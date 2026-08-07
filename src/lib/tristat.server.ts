@@ -66,6 +66,27 @@ async function steamFetch<T>(url: string): Promise<T | null> {
   }
 }
 
+async function fetchSteamAchievements(steamId: string, appId: string) {
+  const key = process.env["STEAM_API_KEY"];
+  if (!key) return null;
+
+  const data = await steamFetch<{
+    playerstats?: {
+      success?: boolean;
+      achievements?: Array<{ achieved?: 0 | 1 }>;
+    };
+  }>(
+    `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${key}&steamid=${steamId}&appid=${appId}`,
+  );
+
+  const achievements = data?.playerstats?.achievements;
+  if (!data?.playerstats?.success || !achievements?.length) return null;
+
+  const total = achievements.length;
+  const unlocked = achievements.reduce((count, achievement) => count + (achievement.achieved === 1 ? 1 : 0), 0);
+  return { unlocked, total };
+}
+
 export async function resolveSteamAccount(input: string) {
   const key = process.env["STEAM_API_KEY"];
   const trimmed = input.trim();
@@ -143,8 +164,26 @@ async function fetchSteamLibrary(steamId: string): Promise<{ games: SyncedGame[]
       last_played_at: game.rtime_last_played ? new Date(game.rtime_last_played * 1000).toISOString() : null,
     }));
 
+  const enrichedGames = await Promise.all(
+    imported.map(async (game) => {
+      const achievements = await fetchSteamAchievements(steamId, game.app_id);
+      if (!achievements) return { game, hasAchievements: false };
+      return {
+        game: {
+          ...game,
+          achievements_unlocked: achievements.unlocked,
+          achievements_total: achievements.total,
+        },
+        hasAchievements: true,
+      };
+    }),
+  );
+
+  const gamesWithAchievements = enrichedGames.filter((row) => row.hasAchievements).length;
+  const finalGames = enrichedGames.map((row) => row.game);
+
   return {
-    games: imported,
+    games: finalGames,
     diagnostics: [
       {
         stage: "steam.library",
@@ -153,6 +192,16 @@ async function fetchSteamLibrary(steamId: string): Promise<{ games: SyncedGame[]
           imported.length > 0
             ? `Imported ${imported.length} Steam game(s)`
             : "Steam returned no owned games with playtime. Check game details visibility on the Steam profile.",
+      },
+      {
+        stage: "steam.achievements",
+        status: gamesWithAchievements > 0 ? "ok" : "warning",
+        detail:
+          imported.length === 0
+            ? "No Steam games available to check achievements for."
+            : gamesWithAchievements > 0
+              ? `Imported achievements for ${gamesWithAchievements}/${imported.length} game(s).`
+              : "Steam did not return achievement data. This is often caused by game/profile privacy or unsupported titles.",
       },
     ],
   };
