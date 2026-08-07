@@ -34,6 +34,22 @@ export const getWorkspace = createServerFn({ method: "GET" })
         .limit(40),
     ]);
 
+    const failures = [
+      ["profiles", profile.error],
+      ["linked_accounts", links.error],
+      ["games", games.error],
+      ["friends", friends.error],
+      ["goals", goals.error],
+      ["activity_events", activity.error],
+      ["goal_events", goalEvents.error],
+    ].filter(([, error]) => error);
+
+    if (failures.length) {
+      throw new Error(
+        failures.map(([name, error]) => `${name}: ${(error as { message?: string }).message ?? "unknown error"}`).join(" | "),
+      );
+    }
+
     return {
       profile: profile.data,
       links: links.data ?? [],
