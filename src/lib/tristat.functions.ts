@@ -9,7 +9,7 @@ import {
   syncPlatform,
 } from "./tristat.server";
 
-export const getWorkspace = createServerFn({ method: "POST" })
+export const getWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = context.supabase;
