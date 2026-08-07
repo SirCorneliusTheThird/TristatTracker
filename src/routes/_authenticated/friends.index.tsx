@@ -30,20 +30,38 @@ function FriendsPage() {
   const friends = (data?.friends ?? []).filter((f) => f.name.toLowerCase().includes(q.toLowerCase()));
   const online = friends.filter((f) => f.status !== "offline").length;
 
+  console.log("[friends] view state", {
+    kidsMode: kids,
+    hideFriendsList: hideFriends,
+    hideStatus,
+    importedCount: data?.friends?.length ?? 0,
+    visibleCount: friends.length,
+    preview: friends.slice(0, 5).map((f) => ({
+      id: f.id,
+      name: f.name,
+      private: f.is_private,
+      platform: f.platform,
+    })),
+  });
+
   return (
     <AppShell title="Friends" subtitle={`${friends.length} imported · ${online} online`}>
       <RequireLinks>
         {kids ? (
           <KidsBlocked feature="Friends" />
-        ) : hideFriends ? (
-          <div className="surface p-8 text-center text-sm text-muted-foreground">
-            Your friends list is hidden by parental controls.{" "}
-            <Link to="/privacy" className="text-primary underline">
-              Privacy settings
-            </Link>
-          </div>
         ) : (
           <>
+            {hideFriends ? (
+              <div className="surface mb-4 p-4 text-sm text-muted-foreground">
+                <p>
+                  Your <strong>hide friends list</strong> privacy setting is enabled. It affects how others see your
+                  profile, but your own imported friends are still shown below.
+                </p>
+                <Link to="/privacy" className="mt-2 inline-block text-primary underline">
+                  Open privacy settings
+                </Link>
+              </div>
+            ) : null}
             <Input
               placeholder="Search friends…"
               value={q}
