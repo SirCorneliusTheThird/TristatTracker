@@ -106,11 +106,11 @@ export const syncNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const db = context.supabase;
-    await syncPlatform(db, context.userId, "steam");
-    await syncPlatform(db, context.userId, "epic");
+    const steam = await syncPlatform(db, context.userId, "steam");
+    const epic = await syncPlatform(db, context.userId, "epic");
     await rebuildActivity(db, context.userId);
     const completed = await recomputeGoals(db, context.userId);
-    return { ok: true, completed };
+    return { ok: true, completed, platforms: { steam, epic } };
   });
 
 export const updateProfile = createServerFn({ method: "POST" })

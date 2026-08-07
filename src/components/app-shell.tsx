@@ -135,7 +135,7 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
       console.log("[sync] step", "calling syncNow()");
       const res = await sync({});
       console.log("[sync] step", "syncNow() resolved");
-      console.log("[sync] response", res);
+      console.log("[sync] response", JSON.stringify(res, null, 2));
       console.log("[sync] step", "invalidating workspace query");
       await refresh();
       console.log("[sync] step", "workspace query invalidated");

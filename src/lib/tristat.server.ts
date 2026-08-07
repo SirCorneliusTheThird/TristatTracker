@@ -30,6 +30,12 @@ type SyncedFriend = {
   achievements_count: number;
 };
 
+type SyncDiagnostic = {
+  stage: string;
+  status: "ok" | "warning";
+  detail: string;
+};
+
 function hash(seed: string) {
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
@@ -105,9 +111,14 @@ export function resolveEpicAccount(input: string) {
   };
 }
 
-async function fetchSteamLibrary(steamId: string): Promise<SyncedGame[]> {
+async function fetchSteamLibrary(steamId: string): Promise<{ games: SyncedGame[]; diagnostics: SyncDiagnostic[] }> {
   const key = process.env["STEAM_API_KEY"];
-  if (!key) return [];
+  if (!key) {
+    return {
+      games: [],
+      diagnostics: [{ stage: "steam.library", status: "warning", detail: "STEAM_API_KEY is not configured" }],
+    };
+  }
 
   const data = await steamFetch<{
     response?: {
@@ -118,7 +129,7 @@ async function fetchSteamLibrary(steamId: string): Promise<SyncedGame[]> {
   );
 
   const games = data?.response?.games ?? [];
-  return games
+  const imported = games
     .filter((game) => game.playtime_forever > 0)
     .sort((a, b) => b.playtime_forever - a.playtime_forever)
     .slice(0, 24)
@@ -131,6 +142,20 @@ async function fetchSteamLibrary(steamId: string): Promise<SyncedGame[]> {
       achievements_unlocked: 0,
       last_played_at: game.rtime_last_played ? new Date(game.rtime_last_played * 1000).toISOString() : null,
     }));
+
+  return {
+    games: imported,
+    diagnostics: [
+      {
+        stage: "steam.library",
+        status: imported.length > 0 ? "ok" : "warning",
+        detail:
+          imported.length > 0
+            ? `Imported ${imported.length} Steam game(s)`
+            : "Steam returned no owned games with playtime. Check game details visibility on the Steam profile.",
+      },
+    ],
+  };
 }
 
 function mapSteamPresence(player: { personastate?: number; gameextrainfo?: string | null }): Presence {
@@ -140,16 +165,32 @@ function mapSteamPresence(player: { personastate?: number; gameextrainfo?: strin
   return "offline";
 }
 
-async function fetchSteamFriends(steamId: string): Promise<SyncedFriend[]> {
+async function fetchSteamFriends(steamId: string): Promise<{ friends: SyncedFriend[]; diagnostics: SyncDiagnostic[] }> {
   const key = process.env["STEAM_API_KEY"];
-  if (!key) return [];
+  if (!key) {
+    return {
+      friends: [],
+      diagnostics: [{ stage: "steam.friends", status: "warning", detail: "STEAM_API_KEY is not configured" }],
+    };
+  }
 
   const list = await steamFetch<{
     friendslist?: { friends?: Array<{ steamid: string }> };
   }>(`https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key=${key}&steamid=${steamId}&relationship=friend`);
 
   const ids = list?.friendslist?.friends?.map((friend) => friend.steamid).filter(Boolean) ?? [];
-  if (!ids.length) return [];
+  if (!ids.length) {
+    return {
+      friends: [],
+      diagnostics: [
+        {
+          stage: "steam.friends",
+          status: "warning",
+          detail: "Steam returned no visible friends. Check friends-list visibility on the Steam profile.",
+        },
+      ],
+    };
+  }
 
   const summary = await steamFetch<{
     response?: {
@@ -164,7 +205,7 @@ async function fetchSteamFriends(steamId: string): Promise<SyncedFriend[]> {
     };
   }>(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${key}&steamids=${ids.join(",")}`);
 
-  return (summary?.response?.players ?? []).map((player) => ({
+  const friends = (summary?.response?.players ?? []).map((player) => ({
     platform_friend_id: player.steamid,
     name: player.personaname,
     avatar_url: player.avatarfull,
@@ -177,6 +218,20 @@ async function fetchSteamFriends(steamId: string): Promise<SyncedFriend[]> {
     games_count: 0,
     achievements_count: 0,
   }));
+
+  return {
+    friends,
+    diagnostics: [
+      {
+        stage: "steam.friends",
+        status: friends.length > 0 ? "ok" : "warning",
+        detail:
+          friends.length > 0
+            ? `Imported ${friends.length} Steam friend(s)`
+            : "Steam friend summaries could not be resolved.",
+      },
+    ],
+  };
 }
 
 export async function syncPlatform(db: DB, userId: string, platform: Platform) {
@@ -190,10 +245,22 @@ export async function syncPlatform(db: DB, userId: string, platform: Platform) {
 
   let library: SyncedGame[] = [];
   let friends: SyncedFriend[] = [];
+  let diagnostics: SyncDiagnostic[] = [];
 
   if (platform === "steam") {
-    library = await fetchSteamLibrary(link.platform_user_id);
-    friends = await fetchSteamFriends(link.platform_user_id);
+    const libraryResult = await fetchSteamLibrary(link.platform_user_id);
+    const friendsResult = await fetchSteamFriends(link.platform_user_id);
+    library = libraryResult.games;
+    friends = friendsResult.friends;
+    diagnostics = [...libraryResult.diagnostics, ...friendsResult.diagnostics];
+  } else {
+    diagnostics = [
+      {
+        stage: "epic.sync",
+        status: "warning",
+        detail: "Epic account linking exists, but live Epic import is not implemented in this build.",
+      },
+    ];
   }
 
   await db.from("games").delete().eq("user_id", userId).eq("platform", platform);
@@ -214,7 +281,7 @@ export async function syncPlatform(db: DB, userId: string, platform: Platform) {
 
   await db.from("linked_accounts").update({ last_synced_at: new Date().toISOString() }).eq("id", link.id);
 
-  return { platform, synced: true, games: library.length, friends: friends.length };
+  return { platform, synced: true, games: library.length, friends: friends.length, diagnostics };
 }
 
 export async function rebuildActivity(db: DB, userId: string) {
