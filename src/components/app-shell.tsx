@@ -26,6 +26,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useRefreshWorkspace, useWorkspace } from "@/hooks/use-workspace";
 import { syncNow } from "@/lib/tristat.functions";
@@ -54,6 +55,37 @@ function describeClientError(error: unknown) {
   }
 
   return error;
+}
+
+function ImportWarnings() {
+  const { data } = useWorkspace();
+  const linkedPlatforms = new Set(
+    (data?.links ?? []).map((link: { platform: string }) => link.platform),
+  );
+  const warnings: string[] = [];
+
+  if (linkedPlatforms.has("steam") && !data?.importStatus?.steamApiConfigured) {
+    warnings.push("Steam is linked, but STEAM_API_KEY is not configured on the server, so no Steam games or friends can be imported.");
+  }
+
+  if (linkedPlatforms.has("epic") && !data?.importStatus?.epicImportImplemented) {
+    warnings.push("Epic is linked, but live Epic import is not implemented in this build, so Epic data will stay empty.");
+  }
+
+  if (!warnings.length) return null;
+
+  return (
+    <Alert className="mb-4 border-amber-300/60 bg-amber-50 text-amber-950">
+      <AlertTitle>Import setup required</AlertTitle>
+      <AlertDescription>
+        <ul className="space-y-1">
+          {warnings.map((warning) => (
+            <li key={warning}>{warning}</li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 function AppSidebar({ kidsMode }: { kidsMode: boolean }) {
@@ -175,7 +207,10 @@ export function AppShell({ title, subtitle, children }: { title: string; subtitl
               <span className="hidden sm:inline">Sign out</span>
             </Button>
           </header>
-          <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">{children}</main>
+          <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">
+            <ImportWarnings />
+            {children}
+          </main>
         </div>
       </div>
     </SidebarProvider>

@@ -59,6 +59,10 @@ export const getWorkspace = createServerFn({ method: "GET" })
       goals: goals.error ? [] : (goals.data ?? []),
       activity: activity.error ? [] : (activity.data ?? []),
       goalEvents: goalEvents.error ? [] : (goalEvents.data ?? []),
+      importStatus: {
+        steamApiConfigured: Boolean(process.env["STEAM_API_KEY"]),
+        epicImportImplemented: false,
+      },
     };
   });
 
