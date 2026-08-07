@@ -5,6 +5,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+const TRUSTED_SUPABASE_URL = 'https://bilmgibljmdervrzqldr.supabase.co';
+
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
@@ -30,27 +32,21 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
-  const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? process.env['SUPABASE_URL'];
+  const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL'];
   const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'];
-
-  if (
-    process.env['NEXT_PUBLIC_SUPABASE_URL'] &&
-    process.env['SUPABASE_URL'] &&
-    process.env['NEXT_PUBLIC_SUPABASE_URL'] !== process.env['SUPABASE_URL']
-  ) {
-    console.error(
-      `[Supabase] Mismatched project URLs: NEXT_PUBLIC_SUPABASE_URL=${process.env['NEXT_PUBLIC_SUPABASE_URL']} SUPABASE_URL=${process.env['SUPABASE_URL']}. Using NEXT_PUBLIC_SUPABASE_URL for server admin client.`,
-    );
-  }
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL'] : []),
+      ...(!SUPABASE_URL ? ['NEXT_PUBLIC_SUPABASE_URL'] : []),
       ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Configure matching Supabase variables in Vercel or your local environment.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Configure the trusted NEXT_PUBLIC Supabase URL and the service role key in Vercel or your local environment.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
+  }
+
+  if (SUPABASE_URL !== TRUSTED_SUPABASE_URL) {
+    throw new Error(`Supabase URL mismatch: expected ${TRUSTED_SUPABASE_URL} but received ${SUPABASE_URL}`);
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

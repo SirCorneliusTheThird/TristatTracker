@@ -4,6 +4,7 @@ import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
 
+const TRUSTED_SUPABASE_URL = 'https://bilmgibljmdervrzqldr.supabase.co';
 
 
 function isNewSupabaseApiKey(value: string): boolean {
@@ -32,42 +33,25 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
-    const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? process.env['SUPABASE_URL'];
+    const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL'];
     const SUPABASE_PUBLISHABLE_KEY =
       process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ??
-      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ??
-      process.env['SUPABASE_PUBLISHABLE_KEY'];
-
-    if (
-      process.env['NEXT_PUBLIC_SUPABASE_URL'] &&
-      process.env['SUPABASE_URL'] &&
-      process.env['NEXT_PUBLIC_SUPABASE_URL'] !== process.env['SUPABASE_URL']
-    ) {
-      console.error(
-        `[Supabase] Mismatched project URLs: NEXT_PUBLIC_SUPABASE_URL=${process.env['NEXT_PUBLIC_SUPABASE_URL']} SUPABASE_URL=${process.env['SUPABASE_URL']}. Using NEXT_PUBLIC_SUPABASE_URL for auth middleware.`,
-      );
-    }
-
-    if (
-      process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] &&
-      process.env['SUPABASE_PUBLISHABLE_KEY'] &&
-      process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] !== process.env['SUPABASE_PUBLISHABLE_KEY']
-    ) {
-      console.error(
-        '[Supabase] Mismatched publishable keys: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY and SUPABASE_PUBLISHABLE_KEY differ. Using NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY for auth middleware.',
-      );
-    }
+      process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [
-        ...(!SUPABASE_URL ? ['SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL'] : []),
+        ...(!SUPABASE_URL ? ['NEXT_PUBLIC_SUPABASE_URL'] : []),
         ...(!SUPABASE_PUBLISHABLE_KEY
-          ? ['SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY']
+          ? ['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY']
           : []),
       ];
-      const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Configure matching Supabase variables in Vercel or your local environment.`;
+      const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Configure the trusted NEXT_PUBLIC Supabase variables in Vercel or your local environment.`;
       console.error(`[Supabase] ${message}`);
       throw new Error(message);
+    }
+
+    if (SUPABASE_URL !== TRUSTED_SUPABASE_URL) {
+      throw new Error(`Supabase URL mismatch: expected ${TRUSTED_SUPABASE_URL} but received ${SUPABASE_URL}`);
     }
     
     const request = getRequest();

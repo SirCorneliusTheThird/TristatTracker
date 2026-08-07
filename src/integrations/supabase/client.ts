@@ -2,6 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+const TRUSTED_SUPABASE_URL = 'https://bilmgibljmdervrzqldr.supabase.co';
+
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
@@ -40,14 +42,24 @@ const MISSING_KEYS = [
   ...(!SUPABASE_PUBLISHABLE_KEY ? ['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY'] : []),
 ];
 
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+export const isSupabaseConfigured = Boolean(
+  SUPABASE_URL === TRUSTED_SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY,
+);
 export const supabaseConfigError = !isSupabaseConfigured
-  ? `Missing Supabase environment variable(s): ${MISSING_KEYS.join(' and ')}. Set them in Vercel or your local environment.`
+  ? !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY
+    ? `Missing Supabase environment variable(s): ${MISSING_KEYS.join(' and ')}. Set them in Vercel or your local environment.`
+    : `Invalid NEXT_PUBLIC_SUPABASE_URL. Expected ${TRUSTED_SUPABASE_URL} but received ${SUPABASE_URL}.`
   : undefined;
 
 function createSupabaseClient() {
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const message = `Missing Supabase environment variable(s): ${MISSING_KEYS.join(' and ')}. Set them in Vercel or your local environment.`;
+    console.error(`[Supabase] ${message}`);
+    throw new Error(message);
+  }
+
+  if (SUPABASE_URL !== TRUSTED_SUPABASE_URL) {
+    const message = `Invalid NEXT_PUBLIC_SUPABASE_URL. Expected ${TRUSTED_SUPABASE_URL} but received ${SUPABASE_URL}.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
